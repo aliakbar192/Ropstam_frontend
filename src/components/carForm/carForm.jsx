@@ -10,12 +10,13 @@ import Box from '@mui/material/Box';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { Avatar, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Avatar, CircularProgress, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import validationService from '../../services/validationService';
 import Joi from 'joi';
 import carService from '../../services/carService';
 import authService from '../../services/authService';
 import { useNavigate, useParams } from 'react-router-dom';
+import toastService from '../../services/toastService';
 const CarForm = () => {
     const { carId } = useParams();
     console.log(carId);
@@ -27,6 +28,7 @@ const CarForm = () => {
     const [category, setCategory] = useState('');
     const [registration_no, setRegistration_No] = useState('');
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     console.log(errors);
     const schema = Joi.object().keys({
@@ -39,6 +41,7 @@ const CarForm = () => {
         category: Joi.string().required().label('Category'),
         registration_no: Joi.string().required().label('Registration Number'),
     });
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -54,11 +57,9 @@ const CarForm = () => {
                 setRegistration_No(carData.registration_no);
             } catch (error) {
                 console.error('Error fetching car data:', error);
-                // Handle error (e.g., redirect to an error page)
+                toastService.error(error.message);
             }
         };
-
-        // Fetch data only if carId is provided
         if (carId) {
             fetchData();
         }
@@ -86,6 +87,7 @@ const CarForm = () => {
     };
     const doSubmit = async () => {
         try {
+            setLoading(true);
             const user = authService.getCurrentUser();
 
             const response = await carService.createCarData({
@@ -105,13 +107,17 @@ const CarForm = () => {
                 console.log(data);
                 navigate('/dashboard');
             }
+            setLoading(false);
         } catch (ex) {
             console.log(ex);
+            setLoading(false);
+            toastService.error(ex.message);
         }
     };
 
     const handleUpdate = async () => {
         try {
+            setLoading(true);
             const response = await carService.updateCar(carId, {
                 make,
                 model,
@@ -126,8 +132,11 @@ const CarForm = () => {
                 console.log(response);
                 navigate('/dashboard');
             }
+            setLoading(false);
         } catch (ex) {
             console.log(ex);
+            setLoading(false);
+            toastService.error(ex.message);
         }
     };
 
@@ -173,7 +182,7 @@ const CarForm = () => {
                             id="category"
                             label="Select Category"
                             value={category}
-                            onChange={handleChange('cateegory', setCategory)}
+                            onChange={handleChange('category', setCategory)}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -196,7 +205,6 @@ const CarForm = () => {
                                 id="make"
                                 label="Make"
                                 value={make}
-                                autoFocus
                                 onChange={handleChange('make', setMake)}
                             />
                             {errors.make && <span className="loginerror">{errors.make}</span>}
@@ -209,7 +217,6 @@ const CarForm = () => {
                                 id="model"
                                 label="Model"
                                 value={model}
-                                autoFocus
                                 onChange={handleChange('model', setModel)}
                             />
                             {errors.model && <span className="loginerror">{errors.model}</span>}
@@ -263,8 +270,14 @@ const CarForm = () => {
                             {errors.registration_no && <span className="loginerror">{errors.registration_no}</span>}
                         </Grid>
                     </Grid>
-                    <Button fullWidth variant="contained" onClick={handleSubmit} sx={{ mt: 3, mb: 2 }}>
-                        {carId ? 'Update' : 'Add'}
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        onClick={handleSubmit}
+                        sx={{ mt: 3, mb: 2 }}
+                        disabled={loading}
+                    >
+                        {loading ? <CircularProgress size={'30px'} /> : carId ? 'Update' : 'Add'}
                     </Button>
                 </Box>
             </Box>

@@ -15,12 +15,14 @@ import Joi from 'joi';
 import validationService from '../../services/validationService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
+import { CircularProgress } from '@mui/material';
 
 function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
     console.log(errors);
     const schema = Joi.object().keys({
         email: Joi.string()
@@ -49,17 +51,20 @@ function Login() {
     };
     const doSubmit = async () => {
         try {
+            setLoading(true);
             const response = await authService.login({ email, password });
             console.log(response);
             if (response.data.code === 200) {
                 console.log(response);
                 const { data } = response.data.data;
                 console.log(data);
-                await authService.storeLoginData({ token: data.token, user: data.user });
+                authService.storeLoginData({ token: data.token, user: data.user });
                 navigate('/dashboard');
+                setLoading(false);
             }
         } catch (ex) {
             console.log(ex);
+            setLoading(false);
             toastService.error(ex.message);
         }
     };
@@ -120,7 +125,7 @@ function Login() {
                                 email === '' || password === '' || errors.email != null || errors.password !== null
                             }
                         >
-                            Sign In
+                            {loading ? <CircularProgress size={'30px'} /> : 'Sign In'}
                         </Button>
                         <Grid container justifyContent="flex-end">
                             <Grid item>

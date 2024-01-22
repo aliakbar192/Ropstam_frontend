@@ -42,4 +42,6 @@
 .loginerror{
   margin-top: 5px;
   color: red;
+  font-family: 'Roboto', sans-serif ;
+  font-size: small;
 }

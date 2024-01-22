@@ -94,8 +94,8 @@ const Signup = () => {
                                     value={firstName}
                                     onChange={handleChange('firstName', setFirstName)}
                                 />
+                                {errors.firstName && <span className="loginerror">{errors.firstName}</span>}
                             </Grid>
-                            {errors.firstName && <span className="loginerror">{errors.firstName}</span>}
                             <Grid item xs={12}>
                                 <TextField
                                     required
@@ -126,7 +126,7 @@ const Signup = () => {
                             onClick={handleSubmit}
                             fullWidth
                             variant="contained"
-                            disabled={email === '' || firstName === '' || lastName === ''}
+                            disabled={email === '' || firstName === '' || lastName === '' || loading}
                             sx={{ mt: 3, mb: 2 }}
                         >
                             {loading ? <CircularProgress size={'30px'} /> : 'Sign up'}

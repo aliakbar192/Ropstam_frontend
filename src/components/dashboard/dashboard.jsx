@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import authService from '../../services/authService';
 import carService from '../../services/carService';
 import './dashboard.css';
 import { Box, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+// import toastService from '../../services/toastService';
 
 const Dashboard = () => {
+    const isInitialRender = useRef(true);
     const navigate = useNavigate();
     const [paginationModel, setPaginationModel] = useState({
         page: 1,
@@ -20,7 +22,12 @@ const Dashboard = () => {
     useEffect(() => {
         document.body.classList.add('dashboard-page');
 
-        fetchData();
+        if (!isInitialRender.current) {
+            // Skip fetching data on the initial render
+            fetchData();
+        } else {
+            isInitialRender.current = false;
+        }
     }, [paginationModel.page, paginationModel.pageSize]);
     const fetchData = async () => {
         setIsLoading(true);
@@ -44,6 +51,7 @@ const Dashboard = () => {
                 totalPages,
                 pageSize: 10, // Set the default page size
             }));
+            isInitialRender.current === true;
         } catch (error) {
             console.error('Error fetching car data:', error);
         } finally {
@@ -70,7 +78,6 @@ const Dashboard = () => {
             flex: 1,
             renderCell: (params) => <Button onClick={() => handleDelete(params.row._id)}>Delete</Button>,
         },
-        // Add more fields as needed
     ];
 
     const handleDelete = async (carId) => {
@@ -112,7 +119,7 @@ const Dashboard = () => {
                     Add New Car
                 </Button>
             </Box>
-            <div style={{ height: 'auto', width: '80%' }}>
+            <div style={{ minHeight: '500px', width: '80%' }}>
                 <DataGrid
                     rows={rows}
                     columns={columns}

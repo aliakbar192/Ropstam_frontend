@@ -19,7 +19,8 @@ function App() {
                     <Routes>
                         <Route element={<PrivateRoutes />}>
                             <Route path="/dashboard" element={<Dashboard />}></Route>
-                            <Route path="/addDetails" element={<CarForm />}></Route>
+                            <Route path="/addDetails/:carId" element={<CarForm />} />
+                            <Route path="/addDetails" element={<CarForm />} />
                         </Route>
                         <Route path="/" element={<Login />}></Route>
                         <Route path="/signup" element={<Signup />}></Route>

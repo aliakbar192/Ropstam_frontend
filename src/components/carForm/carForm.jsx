@@ -1,5 +1,5 @@
 import '../../App.css';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 // import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -15,8 +15,10 @@ import validationService from '../../services/validationService';
 import Joi from 'joi';
 import carService from '../../services/carService';
 import authService from '../../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 const CarForm = () => {
+    const { carId } = useParams();
+    console.log(carId);
     const [make, setMake] = useState('');
     const [model, setModel] = useState('');
     const [variant, setVariant] = useState('');
@@ -37,6 +39,30 @@ const CarForm = () => {
         category: Joi.string().required().label('Category'),
         registration_no: Joi.string().required().label('Registration Number'),
     });
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch car data by carId and populate the form
+                const response = await carService.getOneCarById(carId);
+                const carData = response.data.data.car;
+                setMake(carData.make);
+                setModel(carData.model);
+                setVariant(carData.variant);
+                setYear(carData.year);
+                setColor(carData.color);
+                setCategory(carData.category);
+                setRegistration_No(carData.registration_no);
+            } catch (error) {
+                console.error('Error fetching car data:', error);
+                // Handle error (e.g., redirect to an error page)
+            }
+        };
+
+        // Fetch data only if carId is provided
+        if (carId) {
+            fetchData();
+        }
+    }, [carId]);
     const handleChange =
         (name, setData) =>
         ({ target: input }) => {
@@ -55,7 +81,7 @@ const CarForm = () => {
         if (errors) {
             console.log(errors);
         } else {
-            doSubmit();
+            carId ? handleUpdate() : doSubmit();
         }
     };
     const doSubmit = async () => {
@@ -77,6 +103,27 @@ const CarForm = () => {
                 console.log(response);
                 const { data } = response.data.data;
                 console.log(data);
+                navigate('/dashboard');
+            }
+        } catch (ex) {
+            console.log(ex);
+        }
+    };
+
+    const handleUpdate = async () => {
+        try {
+            const response = await carService.updateCar(carId, {
+                make,
+                model,
+                variant,
+                year,
+                color,
+                registration_no,
+                category,
+            });
+
+            if (response.data.code === 200) {
+                console.log(response);
                 navigate('/dashboard');
             }
         } catch (ex) {
@@ -116,7 +163,7 @@ const CarForm = () => {
                     <DirectionsCarIcon />
                 </Avatar>
                 <Typography component="h1" variant="h5">
-                    Add Item
+                    {carId ? 'Update Item' : 'Add Item'}
                 </Typography>
                 <Box sx={{ mt: 3 }}>
                     <FormControl fullWidth sx={{ marginBottom: 2 }} xs={12}>
@@ -217,7 +264,7 @@ const CarForm = () => {
                         </Grid>
                     </Grid>
                     <Button fullWidth variant="contained" onClick={handleSubmit} sx={{ mt: 3, mb: 2 }}>
-                        Add
+                        {carId ? 'Update' : 'Add'}
                     </Button>
                 </Box>
             </Box>

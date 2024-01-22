@@ -45,19 +45,10 @@ function getJwt() {
     return Cookies.get('token');
 }
 
-async function logout(userId) {
-    localStorage.removeItem(authTokenKey);
-    localStorage.removeItem(accessTokenKey);
-    localStorage.removeItem(userData);
-    localStorage.removeItem(userRole);
-    return await http.post(`${apiEndpoint}/logout`, { userId });
-}
-
 export default {
     login,
     register,
     storeLoginData,
-    logout,
     getCurrentUser,
     getJwt,
 };

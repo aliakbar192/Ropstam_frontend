@@ -1,144 +1,43 @@
-import '../../App.css';
 import React, { useEffect, useState } from 'react';
-// import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    CssBaseline,
+    FormControl,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    Typography,
+} from '@mui/material';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { Avatar, CircularProgress, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import validationService from '../../services/validationService';
 import Joi from 'joi';
 import carService from '../../services/carService';
 import authService from '../../services/authService';
-import { useNavigate, useParams } from 'react-router-dom';
 import toastService from '../../services/toastService';
+import validationService from '../../services/validationService';
+
 const CarForm = () => {
     const { carId } = useParams();
-    console.log(carId);
-    const [make, setMake] = useState('');
-    const [model, setModel] = useState('');
-    const [variant, setVariant] = useState('');
-    const [year, setYear] = useState('');
-    const [color, setColor] = useState('');
-    const [category, setCategory] = useState('');
-    const [registration_no, setRegistration_No] = useState('');
-    const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    console.log(errors);
-    const schema = Joi.object().keys({
-        make: Joi.string().required().label('Make'),
-        model: Joi.string().required().label('Model'),
 
-        variant: Joi.string().required().label('Variant'),
-        year: Joi.string().required().label('Year'),
-        color: Joi.string().required().label('Color'),
-        category: Joi.string().required().label('Category'),
-        registration_no: Joi.string().required().label('Registration Number'),
+    const [formData, setFormData] = useState({
+        category: '',
+        make: '',
+        model: '',
+        year: '',
+        variant: '',
+        color: '',
+        registration_no: '',
     });
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch car data by carId and populate the form
-                const response = await carService.getOneCarById(carId);
-                const carData = response.data.data.car;
-                setMake(carData.make);
-                setModel(carData.model);
-                setVariant(carData.variant);
-                setYear(carData.year);
-                setColor(carData.color);
-                setCategory(carData.category);
-                setRegistration_No(carData.registration_no);
-            } catch (error) {
-                console.error('Error fetching car data:', error);
-                toastService.error(error.message);
-            }
-        };
-        if (carId) {
-            fetchData();
-        }
-    }, [carId]);
-    const handleChange =
-        (name, setData) =>
-        ({ target: input }) => {
-            const errorMessage = validationService.validateProperty(input, schema);
-
-            setErrors((previousErrors) => ({ ...previousErrors, [name]: errorMessage }));
-            setData(input.value);
-        };
-    const handleSubmit = () => {
-        const errors = validationService.validate(
-            { make, model, registration_no, variant, year, category, color },
-            schema,
-        );
-
-        setErrors(errors || {});
-        if (errors) {
-            console.log(errors);
-        } else {
-            carId ? handleUpdate() : doSubmit();
-        }
-    };
-    const doSubmit = async () => {
-        try {
-            setLoading(true);
-            const user = authService.getCurrentUser();
-
-            const response = await carService.createCarData({
-                make,
-                model,
-                variant,
-                year,
-                color,
-                registration_no,
-                category,
-                user_id: user._id,
-            });
-            console.log(response);
-            if (response.data.code === 200) {
-                console.log(response);
-                const { data } = response.data.data;
-                console.log(data);
-                navigate('/dashboard');
-            }
-            setLoading(false);
-        } catch (ex) {
-            console.log(ex);
-            setLoading(false);
-            toastService.error(ex.message);
-        }
-    };
-
-    const handleUpdate = async () => {
-        try {
-            setLoading(true);
-            const response = await carService.updateCar(carId, {
-                make,
-                model,
-                variant,
-                year,
-                color,
-                registration_no,
-                category,
-            });
-
-            if (response.data.code === 200) {
-                console.log(response);
-                navigate('/dashboard');
-            }
-            setLoading(false);
-        } catch (ex) {
-            console.log(ex);
-            setLoading(false);
-            toastService.error(ex.message);
-        }
-    };
+    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const carCategories = [
         'Bus',
@@ -158,6 +57,100 @@ const CarForm = () => {
         'Truck',
         'Van',
     ];
+
+    const schema = Joi.object().keys({
+        make: Joi.string().required().label('Make'),
+        model: Joi.string().required().label('Model'),
+        variant: Joi.string().required().label('Variant'),
+        year: Joi.string().required().label('Year'),
+        color: Joi.string().required().label('Color'),
+        category: Joi.string().required().label('Category'),
+        registration_no: Joi.string().required().label('Registration Number'),
+    });
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                if (carId) {
+                    const response = await carService.getOneCarById(carId);
+                    const carData = response.data.data.car;
+                    const { category, make, model, year, variant, color, registration_no } = carData;
+
+                    setFormData({
+                        category,
+                        make,
+                        model,
+                        year,
+                        variant,
+                        color,
+                        registration_no,
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching car data:', error);
+                toastService.error(error.message);
+            }
+        };
+
+        if (carId) {
+            fetchData();
+        }
+    }, [carId]);
+
+    const handleChange = (name) => (event) => {
+        const value = event.target.value;
+        const errorMessage = validationService.validateProperty({ name, value }, schema);
+        setErrors((prevErrors) => ({ ...prevErrors, [name]: errorMessage }));
+        setFormData((prevData) => ({ ...prevData, [name]: value }));
+    };
+
+    const validateForm = () => {
+        const validationErrors = validationService.validate(formData, schema);
+        setErrors(validationErrors || {});
+        return !validationErrors;
+    };
+
+    const handleSubmit = async () => {
+        if (validateForm()) {
+            carId ? handleUpdate() : doSubmit();
+        } else {
+            console.log(errors);
+        }
+    };
+
+    const doSubmit = async () => {
+        try {
+            setLoading(true);
+            const user = authService.getCurrentUser();
+            const response = await carService.createCarData({ ...formData, user_id: user._id });
+
+            if (response.data.code === 200) {
+                console.log(response);
+                navigate('/dashboard');
+            }
+        } catch (ex) {
+            console.log(ex);
+            setLoading(false);
+            toastService.error(ex.message);
+        }
+    };
+
+    const handleUpdate = async () => {
+        try {
+            setLoading(true);
+            const response = await carService.updateCar(carId, formData);
+
+            if (response.data.code === 200) {
+                console.log(response);
+                navigate('/dashboard');
+            }
+        } catch (ex) {
+            console.log(ex);
+            setLoading(false);
+            toastService.error(ex.message);
+        }
+    };
+
     return (
         <Container component="main" maxWidth="xs">
             <CssBaseline />
@@ -181,8 +174,8 @@ const CarForm = () => {
                             labelId="category"
                             id="category"
                             label="Select Category"
-                            value={category}
-                            onChange={handleChange('category', setCategory)}
+                            value={formData.category}
+                            onChange={handleChange('category')}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -204,8 +197,8 @@ const CarForm = () => {
                                 fullWidth
                                 id="make"
                                 label="Make"
-                                value={make}
-                                onChange={handleChange('make', setMake)}
+                                value={formData.make}
+                                onChange={handleChange('make')}
                             />
                             {errors.make && <span className="loginerror">{errors.make}</span>}
                         </Grid>
@@ -216,8 +209,8 @@ const CarForm = () => {
                                 fullWidth
                                 id="model"
                                 label="Model"
-                                value={model}
-                                onChange={handleChange('model', setModel)}
+                                value={formData.model}
+                                onChange={handleChange('model')}
                             />
                             {errors.model && <span className="loginerror">{errors.model}</span>}
                         </Grid>
@@ -228,8 +221,8 @@ const CarForm = () => {
                                 id="year"
                                 label="Year"
                                 name="year"
-                                value={year}
-                                onChange={handleChange('year', setYear)}
+                                value={formData.year}
+                                onChange={handleChange('year')}
                             />
                             {errors.year && <span className="loginerror">{errors.year}</span>}
                         </Grid>
@@ -240,8 +233,8 @@ const CarForm = () => {
                                 id="variant"
                                 label="Variant"
                                 name="variant"
-                                value={variant}
-                                onChange={handleChange('variant', setVariant)}
+                                value={formData.variant}
+                                onChange={handleChange('variant')}
                             />
                             {errors.variant && <span className="loginerror">{errors.variant}</span>}
                         </Grid>
@@ -252,8 +245,8 @@ const CarForm = () => {
                                 id="color"
                                 label="Color"
                                 name="color"
-                                value={color}
-                                onChange={handleChange('color', setColor)}
+                                value={formData.color}
+                                onChange={handleChange('color')}
                             />
                             {errors.color && <span className="loginerror">{errors.color}</span>}
                         </Grid>
@@ -264,8 +257,8 @@ const CarForm = () => {
                                 id="registration_no"
                                 label="Registration Number"
                                 name="registration_no"
-                                value={registration_no}
-                                onChange={handleChange('registration_no', setRegistration_No)}
+                                value={formData.registration_no}
+                                onChange={handleChange('registration_no')}
                             />
                             {errors.registration_no && <span className="loginerror">{errors.registration_no}</span>}
                         </Grid>
@@ -284,4 +277,5 @@ const CarForm = () => {
         </Container>
     );
 };
+
 export default CarForm;

@@ -1,20 +1,38 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { DataGrid } from '@mui/x-data-grid';
+import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 import authService from '../../services/authService';
 import carService from '../../services/carService';
 import './dashboard.css';
-import { Box, Button, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-// import toastService from '../../services/toastService';
+import { Box, Button, FormControl, InputLabel, LinearProgress, MenuItem, Select, Typography } from '@mui/material';
 
+import { useNavigate } from 'react-router-dom';
 const Dashboard = () => {
     const isInitialRender = useRef(true);
     const navigate = useNavigate();
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const [paginationModel, setPaginationModel] = useState({
         page: 1,
         pageSize: 10,
         totalPages: 0,
     });
+    const carCategories = [
+        'Bus',
+        'Sedan',
+        'SUV',
+        'Hatchback',
+        'Convertible',
+        'Coupe',
+        'Crossover',
+        'Minivan',
+        'Pickup Truck',
+        'Wagon',
+        'Electric',
+        'Hybrid',
+        'Luxury',
+        'Sports Car',
+        'Truck',
+        'Van',
+    ];
     const [rows, setRows] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [rowCountState, setRowCountState] = useState(0);
@@ -27,8 +45,14 @@ const Dashboard = () => {
             fetchData();
         } else {
             isInitialRender.current = false;
+            // Set the default page size explicitly
+            setPaginationModel((prevModel) => ({
+                ...prevModel,
+                pageSize: 10,
+            }));
         }
-    }, [paginationModel.page, paginationModel.pageSize]);
+    }, [paginationModel.page, paginationModel.pageSize, selectedCategory]);
+
     const fetchData = async () => {
         setIsLoading(true);
 
@@ -38,7 +62,9 @@ const Dashboard = () => {
                 user_id: user._id,
                 page: paginationModel.page,
                 pageSize: paginationModel.pageSize,
+                category: selectedCategory,
             });
+            console.log('car data', carData);
 
             const { cars, totalCount, totalPages } = carData.data.data.car;
 
@@ -94,14 +120,14 @@ const Dashboard = () => {
         navigate(`/addDetails/${carId}`);
     };
     const handlePaginationModelChange = (newPaginationModel) => {
-        console.log('Pagination changed', newPaginationModel);
-
-        // If the new page is different from the current page, update paginationModel
-        if (newPaginationModel.page !== paginationModel.page) {
-            console.log('Updating pagination model');
+        if (
+            newPaginationModel.page !== paginationModel.page ||
+            newPaginationModel.pageSize !== paginationModel.pageSize
+        ) {
             setPaginationModel((prevModel) => ({
                 ...prevModel,
                 page: newPaginationModel.page,
+                pageSize: newPaginationModel.pageSize,
             }));
         }
     };
@@ -110,35 +136,55 @@ const Dashboard = () => {
         <div className="dashboardContainer">
             <Box className="dashboard-hader">
                 <Typography variant="h4">Total cars : {rowCountState} </Typography>
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        navigate('/addDetails');
-                    }}
-                >
-                    Add New Car
-                </Button>
+                <Box>
+                    <FormControl sx={{ width: '200px', marginRight: '5px' }} xs={12}>
+                        <InputLabel id="category">Select Category</InputLabel>
+                        <Select
+                            labelId="category"
+                            id="category"
+                            label="Select Category"
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <MenuItem value="All">
+                                <em>All</em>
+                            </MenuItem>
+
+                            {carCategories.map((category) => (
+                                <MenuItem key={category} value={category}>
+                                    {category}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <Button
+                        sx={{ padding: '15px' }}
+                        variant="contained"
+                        onClick={() => {
+                            navigate('/addDetails');
+                        }}
+                    >
+                        Add New Car
+                    </Button>
+                </Box>
             </Box>
-            <div style={{ minHeight: '500px', width: '80%' }}>
+            <div style={{ width: '80%' }}>
                 <DataGrid
                     rows={rows}
                     columns={columns}
-                    pageSizeOptions={[10, 20, 30, 50, 70, 100]} // Set the default and other available page sizes
-                    paginationMode="server"
-                    pagination={paginationModel}
                     rowCount={rowCountState}
                     loading={isLoading}
+                    slots={{
+                        loadingOverlay: LinearProgress,
+                        toolbar: GridToolbar,
+                    }}
+                    autoPageSize
+                    paginationMode="server"
+                    pagination={paginationModel}
                     onPaginationModelChange={(newPage) => {
                         console.log('Page changed', newPage);
                         handlePaginationModelChange({ ...paginationModel, page: newPage.page + 1 });
                     }}
-                    onPageSizeChange={(newPageSize) =>
-                        handlePaginationModelChange({
-                            ...paginationModel,
-                            pageSize: newPageSize,
-                            page: 1,
-                        })
-                    }
                     getRowId={(row) => row._id || row.id}
                     totalPages={paginationModel.totalPages}
                 />

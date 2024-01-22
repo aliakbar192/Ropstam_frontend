@@ -1,20 +1,22 @@
 import '../../App.css';
-import React, { useState } from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import React, { useEffect, useState } from 'react';
+import {
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    CssBaseline,
+    Grid,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
 import Joi from 'joi';
 import validationService from '../../services/validationService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
-import CircularProgress from '@mui/material/CircularProgress';
 import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
@@ -24,20 +26,20 @@ const Signup = () => {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    console.log(errors);
+
     const schema = Joi.object().keys({
         email: Joi.string()
             .email({ tlds: { tlds: false } })
             .required()
-            .label('email'),
-        firstName: Joi.string().required().label('firstName'),
-        lastName: Joi.string().required().label('lastName'),
+            .label('Email'),
+        firstName: Joi.string().required().label('First Name'),
+        lastName: Joi.string().required().label('Last Name'),
     });
+
     const handleChange =
         (name, setData) =>
         ({ target: input }) => {
             const errorMessage = validationService.validateProperty(input, schema);
-
             setErrors((previousErrors) => ({ ...previousErrors, [name]: errorMessage }));
             setData(input.value);
         };
@@ -45,24 +47,29 @@ const Signup = () => {
     const handleSubmit = async () => {
         try {
             setLoading(true);
-            console.log({ firstName, lastName, email });
             const data = await authService.register({ firstName, lastName, email });
-            console.log(data);
+
             if (data.data.code === 200) {
                 toastService.success('Signup succeeded. Please check your email.');
-                setLoading(false);
                 navigate('/');
             }
         } catch (ex) {
             console.log(ex);
             toastService.error(ex.message);
+        } finally {
             setLastName('');
             setFirstName('');
             setEmail('');
             setLoading(false);
         }
     };
+    const token = authService.getJwt();
 
+    useEffect(() => {
+        if (token) {
+            navigate('/dashboard');
+        }
+    }, [token, navigate]);
     return (
         <div className="sign_up">
             <Container component="main" maxWidth="xs">
@@ -144,4 +151,5 @@ const Signup = () => {
         </div>
     );
 };
+
 export default Signup;

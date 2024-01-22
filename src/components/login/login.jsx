@@ -1,21 +1,23 @@
 import '../../App.css';
-import React, { useState } from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
-import TextField from '@mui/material/TextField';
-import Link from '@mui/material/Link';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import React, { useEffect, useState } from 'react';
+import {
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    CssBaseline,
+    Grid,
+    Link,
+    TextField,
+    Typography,
+} from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
-import { useNavigate } from 'react-router-dom';
 import Joi from 'joi';
 import validationService from '../../services/validationService';
 import authService from '../../services/authService';
 import toastService from '../../services/toastService';
-import { CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState('');
@@ -23,7 +25,7 @@ function Login() {
     const [errors, setErrors] = useState({});
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    console.log(errors);
+
     const schema = Joi.object().keys({
         email: Joi.string()
             .email({ tlds: { tlds: false } })
@@ -31,41 +33,47 @@ function Login() {
             .label('Email'),
         password: Joi.string().required().label('Password'),
     });
+
+    const token = authService.getJwt();
+
+    useEffect(() => {
+        if (token) {
+            navigate('/dashboard');
+        }
+    }, [token, navigate]);
+
     const handleChange =
         (name, setData) =>
         ({ target: input }) => {
             const errorMessage = validationService.validateProperty(input, schema);
-
             setErrors((previousErrors) => ({ ...previousErrors, [name]: errorMessage }));
             setData(input.value);
         };
+
     const handleSubmit = () => {
         const errors = validationService.validate({ email, password }, schema);
-
         setErrors(errors || {});
-        if (errors) {
-            console.log(errors);
-        } else {
+
+        if (!errors) {
             doSubmit();
         }
     };
+
     const doSubmit = async () => {
         try {
             setLoading(true);
             const response = await authService.login({ email, password });
-            console.log(response);
+
             if (response.data.code === 200) {
-                console.log(response);
                 const { data } = response.data.data;
-                console.log(data);
                 authService.storeLoginData({ token: data.token, user: data.user });
                 navigate('/dashboard');
-                setLoading(false);
             }
         } catch (ex) {
             console.log(ex);
-            setLoading(false);
             toastService.error(ex.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -121,9 +129,7 @@ function Login() {
                             fullWidth
                             variant="contained"
                             sx={{ mt: 3, mb: 2 }}
-                            disabled={
-                                email === '' || password === '' || errors.email != null || errors.password !== null
-                            }
+                            disabled={email === '' || password === '' || errors.email || errors.password}
                         >
                             {loading ? <CircularProgress size={'30px'} /> : 'Sign In'}
                         </Button>
